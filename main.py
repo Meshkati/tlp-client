@@ -1,9 +1,11 @@
-
-# This class is responsible for constructing a reliable socket
-# to the host over a udp socket. Message fragmentation is also implemented here
+from rsocket import ReliableSocket
 
 
-class ReliableSocket:
-    def __init__(self, server_address, server_port):
-        self.__server_address = server_address
-        self.__server_port = server_port
+def main():
+    print('Hello world')
+    socket_reliable = ReliableSocket('127.0.0.1', 8080)
+    socket_reliable.send('اaTHis')
+
+
+if __name__ == '__main__':
+    main()
