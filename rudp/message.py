@@ -29,6 +29,13 @@ class Message:
     def append_data(self, byte):
         self.__data.append(byte)
 
+    def get_sequence_number(self):
+        return self.__sequence_number
+
+    def is_ack(self):
+        return self.__is_ack
+
+
     @staticmethod
     def serialize(message):
         bytes_arr = []
