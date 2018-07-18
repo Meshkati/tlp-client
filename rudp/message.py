@@ -66,7 +66,7 @@ class Message:
 
         bytes_arr += int_to_byte(message.__fragmentation_offset, 8)
         bytes_arr += int_to_byte(message.__fragmentation_id, 8)
-        print('LOG!', message.__data)
+
         bytes_arr += message.__data
 
         return bytes_arr
@@ -95,3 +95,14 @@ class Message:
 
     def __ace_receive_timeout(self):
         self.__rsocket_ins.message_sender(self)
+
+    def __str__(self):
+        return str({
+            "seq_number": self.__sequence_number,
+            "is_ack": self.__is_ack,
+            "is_last_fragment": self.__is_last_fragment,
+            "is_fragmented": self.__is_fragmented,
+            "fragmentation_offset": self.__fragmentation_offset,
+            "fragmentation_id": self.__fragmentation_id,
+            "data": self.__data
+        })
