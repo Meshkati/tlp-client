@@ -1,5 +1,6 @@
 import threading
 import const
+import array
 from util.byte_util import int_to_byte, byte_to_int
 
 
@@ -29,6 +30,13 @@ class Message:
     def append_data(self, byte):
         self.__data.append(byte)
 
+    def set_data(self, data):
+        for d in data:
+            self.__data.append(d)
+
+    def get_data(self):
+        return array.array('B', self.__data).tostring()
+
     def get_sequence_number(self):
         return self.__sequence_number
 
@@ -54,18 +62,18 @@ class Message:
         if message.__is_last_fragment:
             flags_byte += pow(2, const.IS_LAST_FRAGMENT_BIT_FLAG)
 
-        print(flags_byte)
         bytes_arr.append(flags_byte)
-        print(bytes_arr)
 
         bytes_arr += int_to_byte(message.__fragmentation_offset, 8)
         bytes_arr += int_to_byte(message.__fragmentation_id, 8)
+        print('LOG!', message.__data)
         bytes_arr += message.__data
 
         return bytes_arr
 
     @staticmethod
     def deserialize(bytes_arr):
+
         is_fragmented = ((pow(2, const.IS_FRAGMENTED_BIT_FLAG) & bytes_arr[const.FLAGS_BYTE_INDEX]) == bytes_arr[const.FLAGS_BYTE_INDEX])
         is_ack = ((pow(2, const.IS_ACK_BIT_FLAG) & bytes_arr[const.IS_ACK_BIT_FLAG]) == bytes_arr[const.IS_ACK_BIT_FLAG])
         is_last_fragment = ((pow(2, const.IS_LAST_FRAGMENT_BIT_FLAG) & bytes_arr[const.IS_LAST_FRAGMENT_BIT_FLAG]) == bytes_arr[const.IS_LAST_FRAGMENT_BIT_FLAG])
