@@ -78,11 +78,16 @@ class ReliableSocket:
             rec_mess_obj = Message.deserialize(message)
             print('Sent ', self.__current_message)
             print('Receive', rec_mess_obj)
-            while not ((rec_mess_obj.get_sequence_number() == self.__current_message.get_sequence_number()) and (rec_mess_obj.is_ack())):
-                self.__timer.cancel()
-                self.__timer = threading.Timer(const.DATAGRAM_TIMEOUT_SECONDS, self.__ace_receive_timeout)
-                self.__timer.start()
-                message = self.__sock.recv(1024)
+            while True:
+                if rec_mess_obj.is_ack():
+                    if not (rec_mess_obj.get_sequence_number() == self.__current_message.get_sequence_number()):
+                        self.__timer.cancel()
+                        self.__timer = threading.Timer(const.DATAGRAM_TIMEOUT_SECONDS, self.__ace_receive_timeout)
+                        self.__timer.start()
+                    else:
+                        break
+
+                message = self.__sock.recv(const.DATAGRAM_SIZE)
                 rec_mess_obj = Message.deserialize(message)
 
             self.__timer.cancel()
@@ -97,9 +102,6 @@ class ReliableSocket:
     def __underlying_send(self, byte_array):
         self.__sock.sendto(array.array('B', byte_array), (self.__server_address, self.__server_port))
 
-    def __retransmit_current_message(self):
-        return None
-
     def send(self, data):
         # self.__sock.sendto(array.array('B', [17, 24, 121, 1, 12, 222, 34, 76, 88, 92]).tostring(),
         #                    (self.__server_address, self.__server_port))
@@ -109,3 +111,44 @@ class ReliableSocket:
         self.__sock.sendto(data.encode("utf-8"), (self.__server_address, self.__server_port))
         t = self.__sock.recv(1024)
         print('MESSAGE : ' + t.decode("utf-8"))
+
+    @staticmethod
+    def gen_ack(message):
+        m = Message(
+            sequence_number=0,
+            is_fragmented=False,
+            is_last_fragment=True,
+            fragmentation_offset=0,
+            fragmentation_id=0
+        )
+        m.set_sequence_number(sequenc=message.get_sequence_number())
+        m.set_to_ack()
+        return m
+
+    def receive(self):
+        messages = []
+        message_bytes = self.__sock.recv(const.DATAGRAM_SIZE)
+        message = Message.deserialize(message_bytes)
+        messages.append(message)
+        ack = ReliableSocket.gen_ack(message)
+        self.__underlying_send(Message.serialize(ack))
+
+        while not message.is_last_fragment():
+            message_bytes = self.__sock.recv(const.DATAGRAM_SIZE)
+            message = Message.deserialize(message_bytes)
+            messages.append(message)
+            ack = ReliableSocket.gen_ack(message)
+            self.__underlying_send(Message.serialize(ack))
+
+        message_bytes = self.__sock.recv(const.DATAGRAM_SIZE)
+        message = Message.deserialize(message_bytes)
+        messages.append(message)
+        ack = ReliableSocket.gen_ack(message)
+        self.__underlying_send(Message.serialize(ack))
+
+        # messages.append(message)
+        data = []
+        for me in messages:
+            data += me.get_data()
+
+        return data

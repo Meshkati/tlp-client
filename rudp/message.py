@@ -40,9 +40,17 @@ class Message:
     def get_sequence_number(self):
         return self.__sequence_number
 
+    def set_sequence_number(self, sequenc):
+        self.__sequence_number = sequenc
+
+    def set_to_ack(self):
+        self.__is_ack = True
+
     def is_ack(self):
         return self.__is_ack
 
+    def is_last_fragment(self):
+        return self.__is_last_fragment
 
     @staticmethod
     def serialize(message):
